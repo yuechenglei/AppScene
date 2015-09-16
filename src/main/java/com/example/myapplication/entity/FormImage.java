@@ -1,11 +1,11 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.entity;
 
 import android.graphics.Bitmap;
 
 import java.io.ByteArrayOutputStream;
 
 /**
- * Created by wn on 2015/9/15.
+ * Created by yuechenglei on 2015/9/15.
  */
 public class FormImage {
     //参数的名称

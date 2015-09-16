@@ -1,7 +1,6 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.adapter;
 
 import android.app.Activity;
-import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -9,18 +8,21 @@ import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.TextView;
 
+import com.example.myapplication.util.UpLoadPhoto;
+import com.example.wn.myapplication.R;
+
 import java.util.List;
 
 /**
- * Created by wn on 2015/9/15.
+ * Created by yuechenglei on 2015/9/10.
  */
-public class ListAdapter extends BaseAdapter{
+public class ListAdapter extends BaseAdapter {
 
     List<ListBean> list;
     LayoutInflater inflater;
     Activity context;
 
-    public ListAdapter(List<ListBean> list, Activity context){
+    public ListAdapter(List<ListBean> list, Activity context) {
         this.list = list;
         this.context = context;
         this.inflater = LayoutInflater.from(context);
@@ -44,7 +46,7 @@ public class ListAdapter extends BaseAdapter{
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
         ViewHolder viewHolder;
-        if (convertView == null){
+        if (convertView == null) {
             convertView = inflater.inflate(R.layout.simple_items, null);
             viewHolder = new ViewHolder();
             viewHolder.content = (TextView) convertView.findViewById(R.id.tv_content);
@@ -52,9 +54,7 @@ public class ListAdapter extends BaseAdapter{
             viewHolder.choose = (Button) convertView.findViewById(R.id.choose_photo);
 
             convertView.setTag(viewHolder);
-        }
-
-        else {
+        } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
 
@@ -71,7 +71,7 @@ public class ListAdapter extends BaseAdapter{
         return convertView;
     }
 
-    class ViewHolder{
+    class ViewHolder {
         TextView content;
         TextView title;
         Button choose;

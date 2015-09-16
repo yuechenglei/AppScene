@@ -1,4 +1,4 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.activity;
 
 import android.app.ActionBar;
 import android.app.Activity;
@@ -9,7 +9,7 @@ import android.view.View;
 import android.widget.ActionMenuView;
 
 /**
- * Created by wn on 2015/9/16.
+ * Created by yuechenglei on 2015/9/16.
  */
 public class ActionBarActivity extends Activity {
 

@@ -1,4 +1,4 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.util;
 
 import android.app.Application;
 
@@ -6,7 +6,7 @@ import com.android.volley.RequestQueue;
 import com.android.volley.toolbox.Volley;
 
 /**
- * Created by wn on 2015/9/15.
+ * Created by yuechenglei on 2015/9/5.
  */
 public class MyApplication extends Application {
 

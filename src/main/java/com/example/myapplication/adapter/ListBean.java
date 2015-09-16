@@ -1,7 +1,7 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.adapter;
 
 /**
- * Created by wn on 2015/9/15.
+ * Created by yuechenglei on 2015/9/15.
  */
 public class ListBean {
     String title;

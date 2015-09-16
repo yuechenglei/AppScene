@@ -1,28 +1,24 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.activity;
 
-import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.NumberPicker;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.example.wn.myapplication.R;
 
 import java.util.Calendar;
 
 /**
- * Created by wn on 2015/9/16.
+ * Created by yuechenglei on 2015/9/10
  */
-public class CreateActivity extends ActionBarActivity implements View.OnClickListener{
+public class CreateActivity extends ActionBarActivity implements View.OnClickListener {
 
     TextView choose_time;
     int arrive_year, arrive_month, arrive_day;
@@ -48,7 +44,7 @@ public class CreateActivity extends ActionBarActivity implements View.OnClickLis
         intent = getIntent();
     }
 
-    private void showAler(){
+    private void showAler() {
         View view = View.inflate(getApplicationContext(), R.layout.date_time_picker, null);
         final DatePicker datePicker = (DatePicker) view.findViewById(R.id.new_act_date_picker);
 
@@ -95,19 +91,17 @@ public class CreateActivity extends ActionBarActivity implements View.OnClickLis
 
     @Override
     public void onClick(View v) {
-        switch (v.getId()){
+        switch (v.getId()) {
             case R.id.choose_time_tv:
                 showAler();
                 break;
 
             case R.id.handin_btn:
-                if (name.getText().toString().trim().length() == 0){
+                if (name.getText().toString().trim().length() == 0) {
                     Toast.makeText(CreateActivity.this, "案件名称不能为空！", Toast.LENGTH_SHORT).show();
-                }
-                else if (introduce.getText().toString().trim().length() == 0){
+                } else if (introduce.getText().toString().trim().length() == 0) {
                     Toast.makeText(CreateActivity.this, "说明不能为空！", Toast.LENGTH_SHORT).show();
-                }
-                else {
+                } else {
                     intent.putExtra("name", name.getText().toString());
                     intent.putExtra("introduce", introduce.getText().toString());
                     CreateActivity.this.setResult(102, intent);

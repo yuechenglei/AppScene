@@ -1,11 +1,9 @@
-package com.example.wn.myapplication;
+package com.example.myapplication.util;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.util.Log;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -13,7 +11,7 @@ import java.util.Date;
 import java.util.Locale;
 
 /**
- * Created by wn on 2015/9/15.
+ * Created by yuechenglei on 2015/9/5.
  */
 public class UpLoadPhoto {
 
