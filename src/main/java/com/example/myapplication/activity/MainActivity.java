@@ -2,26 +2,45 @@ package com.example.myapplication.activity;
 
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.ContentUris;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.android.volley.AuthFailureError;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.StringRequest;
 import com.example.myapplication.adapter.ListAdapter;
 import com.example.myapplication.adapter.ListBean;
+import com.example.myapplication.net.GsonRequest;
+import com.example.myapplication.net.ResponseListener;
+import com.example.myapplication.util.MyApplication;
+import com.example.myapplication.util.URI;
+import com.example.myapplication.util.UpLoadPhoto;
+import com.example.myapplication.view.DialogUtil;
 import com.example.wn.myapplication.R;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -37,6 +56,7 @@ public class MainActivity extends ActionBarActivity {
     public static final int PERSONHEADER = 12;
 
     Button create_btn, take_photo;
+    int position;//案件id
 
 
     @Override
@@ -47,10 +67,8 @@ public class MainActivity extends ActionBarActivity {
         actionbar_text.setText("案件列表");
         setContentView(R.layout.activity_main);
         listView = (ListView) findViewById(R.id.mylist);
-        list = new ArrayList<>();
-        for (int i = 0; i < 3; i++) {
-            list.add(new ListBean("案件" + (i + 1), "这是案件" + (i + 1)));
-        }
+        list = new ArrayList<ListBean>();
+        getCase(MyApplication.account);
         listAdapter = new ListAdapter(list, this);
         listView.setAdapter(listAdapter);
 
@@ -60,8 +78,7 @@ public class MainActivity extends ActionBarActivity {
         create_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-/*                list.add(new ListBean("案件" + (listAdapter.getCount() + 1), "这是案件" + (listAdapter.getCount() + 1)));
-                listAdapter.notifyDataSetChanged();*/
+
                 Intent intent = new Intent(MainActivity.this, CreateActivity.class);
                 startActivityForResult(intent, 102);
             }
@@ -70,8 +87,15 @@ public class MainActivity extends ActionBarActivity {
         take_photo.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                UpLoadPhoto upLoadPhoto = new UpLoadPhoto(MainActivity.this);
-//                upLoadPhoto.chooseCamera();
+                //打开相机
+                UpLoadPhoto upLoadPhoto = new UpLoadPhoto(MainActivity.this);
+                upLoadPhoto.chooseCamera();
+            }
+        });
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                position = position;
             }
         });
     }
@@ -81,7 +105,17 @@ public class MainActivity extends ActionBarActivity {
         super.onActivityResult(requestCode, resultCode, data);
         switch (requestCode) {
             case PHOTO_REQUEST:// 相册返回
+                Uri uri = data.getData();
+                String imgPath = getImageAbsolutePath(MainActivity.this, uri);
+                Bitmap bitmap = UpLoadPhoto.lessenUriImage(imgPath);
 
+                Log.v("===========URI=========", uri.getPath());
+                Log.v("===========URI=========", bitmap.toString());
+                // Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.logo);
+                //上传案件id参数
+                //upCaseId(position);
+                //上传图片
+                uploadImg(bitmap);
                 break;
 
             case CAMERA_REQUEST:// 照相返回
@@ -90,13 +124,116 @@ public class MainActivity extends ActionBarActivity {
 
             case 102:
                 if (data != null) {
+                    //getCase(MyApplication.account);
+                    Log.v("main", "刷新");
+                    Log.v("main", list.toString());
                     String name = data.getStringExtra("name");
                     String introduce = data.getStringExtra("introduce");
-                    list.add(new ListBean(name, introduce));
+                    list.add(new ListBean(1, name, introduce));
+                    listAdapter.setList(list);
                     listAdapter.notifyDataSetChanged();
                 }
                 break;
         }
+    }
+
+    /**
+     * 上传案件参数
+     *
+     * @param
+     */
+    void upCaseId(final int position) {
+        StringRequest stringRequest = new StringRequest(Request.Method.POST, URI.pushPhoto,
+                new Response.Listener<String>() {
+                    @Override
+                    public void onResponse(String response) {
+                        Log.d("TAG", response);
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("TAG", error.getMessage(), error);
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("case_id", Integer.toString(position));
+                return map;
+            }
+        };
+        MyApplication.mQueue.add(stringRequest);
+    }
+
+    public void uploadImg(Bitmap bitmap) {
+        final Dialog mDialog = DialogUtil.createLoadingDialog(this, "正在上传");
+        mDialog.show();
+        // Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.mipmap.logo);
+        UpLoadPhoto.uploadImg(URI.pushPhoto, bitmap, new ResponseListener<String>() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.v("zgy", "===========VolleyError=========" + error);
+                // mShowResponse.setText("ErrorResponse\n" + error.getMessage());
+                Toast.makeText(MainActivity.this, "上传失败", Toast.LENGTH_SHORT).show();
+                mDialog.dismiss();
+            }
+
+            @Override
+            public void onResponse(String response) {
+//                response = response.substring(response.indexOf("img src="));
+//                response = response.substring(8, response.indexOf("/>"));
+                Log.v("zgy", "===========onResponse=========" + response);
+                // mShowResponse.setText("图片地址:\n" + response);
+                mDialog.dismiss();
+                Toast.makeText(MainActivity.this, "上传成功", Toast.LENGTH_SHORT).show();
+            }
+
+//            @Override
+//            protected Map<String, String> getParams() throws AuthFailureError {
+//                Map<String, String> map = new HashMap<String, String>();
+//                map.put("case_id", "24");
+//                Log.v("IdentifyNumPage", "case_id");
+//                return map;
+//            }
+        });
+    }
+
+    //获取运程的案件
+    public void getCase(String account) {
+        final Dialog dialog = DialogUtil.createLoadingDialog(this, "正在加载");
+        dialog.show();
+        final ArrayList<ListBean> mycase = new ArrayList<>();
+        GsonRequest<ArrayList<ListBean>> caseRequest = new GsonRequest<ArrayList<ListBean>>(Request.Method.POST,
+                URI.getCase, new TypeToken<ArrayList<ListBean>>() {
+        }.getType(),
+                new Response.Listener<ArrayList<ListBean>>() {
+                    @Override
+                    public void onResponse(ArrayList<ListBean> getcase) {
+                        dialog.dismiss();
+                        if (list.size() > 0)
+                            list.clear();
+                        for (int a = 0; a < getcase.size(); a++) {
+                            list.add(getcase.get(a));
+                            Log.v("main", getcase.get(a).toString());
+                        }
+                        listAdapter.notifyDataSetChanged();
+                    }
+                }, new Response.ErrorListener() {
+            @Override
+            public void onErrorResponse(VolleyError error) {
+                Log.e("TAG", error.getMessage(), error);
+            }
+        }) {
+            @Override
+            protected Map<String, String> getParams() throws AuthFailureError {
+                Map<String, String> map = new HashMap<String, String>();
+                map.put("xkh", MyApplication.account);
+                return map;
+            }
+        };
+        MyApplication.mQueue.add(caseRequest);
+        Log.v("main", mycase.toString());
+
     }
 
     /**

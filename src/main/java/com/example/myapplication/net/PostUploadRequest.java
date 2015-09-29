@@ -23,26 +23,27 @@ import java.util.Map;
  */
 public class PostUploadRequest extends Request<String> {
 
+    /**
+     * 正确数据的时候回掉用
+     */
+    private ResponseListener mListener;
+    /*请求 数据通过参数的形式传入*/
+    private List<FormImage> mListItem;
 
-    private Response.Listener mListener;
-    private List<FormImage> mListItem;//图片列表
-    private Map mMap;//用于保存文本参数
-
-    private String BOUNDARY = "--------------520-13-14"; //
+    private String BOUNDARY = "--------------520-13-14"; //数据分隔线
     private String MULTIPART_FORM_DATA = "multipart/form-data";
 
-    public PostUploadRequest(String url, List<FormImage> listItem, Map<String, String> params, Response.Listener<String> listener, Response.ErrorListener errorListener) {
-        super(Method.POST, url, errorListener);
+    public PostUploadRequest(String url, List<FormImage> listItem, ResponseListener listener) {
+        super(Method.POST, url, listener);
         this.mListener = listener;
         setShouldCache(false);
         mListItem = listItem;
-        mMap = params;
-
+        //设置请求的响应事件，因为文件上传需要较长的时间，所以在这里加大了，设为5秒
         setRetryPolicy(new DefaultRetryPolicy(5000, DefaultRetryPolicy.DEFAULT_MAX_RETRIES, DefaultRetryPolicy.DEFAULT_BACKOFF_MULT));
     }
 
     /**
-     * 解析返回的网络数据
+     * 这里开始解析数据
      *
      * @param response Response from the network
      * @return
@@ -50,9 +51,8 @@ public class PostUploadRequest extends Request<String> {
     @Override
     protected Response<String> parseNetworkResponse(NetworkResponse response) {
         try {
-            System.out.println("Headers!!!!!!!!!!!!" + HttpHeaderParser.parseCharset(response.headers));
             String mString =
-                    new String(response.data, "utf-8");
+                    new String(response.data, HttpHeaderParser.parseCharset(response.headers));
             Log.v("zgy", "====mString===" + mString);
 
             return Response.success(mString,
@@ -63,7 +63,7 @@ public class PostUploadRequest extends Request<String> {
     }
 
     /**
-     * 设置回掉
+     * 回调正确的数据
      *
      * @param response The parsed response returned by
      */
@@ -74,20 +74,21 @@ public class PostUploadRequest extends Request<String> {
 
     @Override
     public byte[] getBody() throws AuthFailureError {
-        if (mListItem == null) {
+        if (mListItem == null || mListItem.size() == 0) {
             return super.getBody();
         }
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         int N = mListItem.size();
-        System.out.println(String.valueOf(N));
         FormImage formImage;
         for (int i = 0; i < N; i++) {
             formImage = mListItem.get(i);
             StringBuffer sb = new StringBuffer();
+            /*第一行*/
             //`"--" + BOUNDARY + "\r\n"`
             sb.append("--" + BOUNDARY);
             sb.append("\r\n");
-            //Content-Disposition: form-data; name=""; filename="" + "\r\n"
+            /*第二行*/
+            //Content-Disposition: form-data; name="参数的名称"; filename="上传的文件名" + "\r\n"
             sb.append("Content-Disposition: form-data;");
             sb.append(" name=\"");
             sb.append(formImage.getName());
@@ -96,17 +97,18 @@ public class PostUploadRequest extends Request<String> {
             sb.append(formImage.getFileName());
             sb.append("\"");
             sb.append("\r\n");
-            //Content-Type: application/octet-stream + "\r\n"
-            //sb.append("Content-Type: ");
-            sb.append("Content-Type:application/octet-stream");
+            /*第三行*/
+            //Content-Type: 文件的 mime 类型 + "\r\n"
+            sb.append("Content-Type: ");
+            sb.append(formImage.getMime());
             sb.append("\r\n");
-            sb.append("Content-Transfer-Encoding: binary");
-            sb.append("\r\n");
+            /*第四行*/
             //"\r\n"
             sb.append("\r\n");
             try {
                 bos.write(sb.toString().getBytes("utf-8"));
-                //图片的二进制数据 + "\r\n"
+                /*第五行*/
+                //文件的二进制数据 + "\r\n"
                 bos.write(formImage.getValue());
                 bos.write("\r\n".getBytes("utf-8"));
             } catch (IOException e) {
@@ -114,48 +116,11 @@ public class PostUploadRequest extends Request<String> {
             }
 
         }
-
-
-        //传文本参数
-        java.util.Iterator it = mMap.entrySet().iterator();
-        while (it.hasNext()) {
-            Map.Entry entry = (Map.Entry) it.next();
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
-            StringBuffer sb = new StringBuffer();
-            //`"--" + BOUNDARY + "\r\n"`
-            sb.append("--" + BOUNDARY);
-            sb.append("\r\n");
-            //Content-Disposition: form-data; name=""; filename="" + "\r\n"
-            sb.append("Content-Disposition: form-data;");
-            sb.append(" name=\"");
-            sb.append(key);
-            sb.append("\"");
-            sb.append("\r\n");
-            //Content-Type: text/plain; charset=UTF-8 + "\r\n"
-            //sb.append("Content-Type: ");
-            sb.append("Content-Type: text/plain; charset=UTF-8");
-            sb.append("\r\n");
-            //Content-Transfer-Encoding: 8bit
-            sb.append("Content-Transfer-Encoding: 8bit");
-            sb.append("\r\n");
-            //"\r\n"
-            sb.append("\r\n");
-            //文本参数的值
-            sb.append(value);
-            sb.append("\r\n");
-            try {
-                bos.write(sb.toString().getBytes("utf-8"));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-
+        /*结尾行*/
         //`"--" + BOUNDARY + "--" + "\r\n"`
         String endLine = "--" + BOUNDARY + "--" + "\r\n";
         try {
-            bos.write(endLine.getBytes("utf-8"));
+            bos.write(endLine.toString().getBytes("utf-8"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -163,17 +128,20 @@ public class PostUploadRequest extends Request<String> {
         return bos.toByteArray();
     }
 
+    //Content-Type: multipart/form-data; boundary=----------8888888888888
     @Override
     public String getBodyContentType() {
         return MULTIPART_FORM_DATA + "; boundary=" + BOUNDARY;
     }
 
     @Override
-    public Map<String, String> getHeaders() throws AuthFailureError {
-        Map<String, String> headers = new HashMap<String, String>();
-        headers.put("Charset", "UTF-8");
-        //headers.put("Content-Type", "multipart/form-data");
-        headers.put("Accept-Encoding", "*");
-        return headers;
+    protected Map<String, String> getParams() throws AuthFailureError {
+        Map<String, String> map = new HashMap<String, String>();
+        map.put("case_id", "24");
+        Log.v("IdentifyNumPage", "case_id");
+        Log.v("IdentifyNumPage", "case_id");
+        Log.v("IdentifyNumPage", "case_id");
+        Log.v("IdentifyNumPage", "case_id");
+        return map;
     }
 }

@@ -2,12 +2,21 @@ package com.example.myapplication.util;
 
 import android.app.Activity;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.os.Environment;
 import android.provider.MediaStore;
 
+import com.android.volley.Request;
+import com.example.myapplication.entity.FormImage;
+import com.example.myapplication.net.PostUploadRequest;
+import com.example.myapplication.net.ResponseListener;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -26,8 +35,58 @@ public class UpLoadPhoto {
 
     public Activity activity;
 
-    public UpLoadPhoto(Activity activity){
+    public UpLoadPhoto(Activity activity) {
         this.activity = activity;
+    }
+
+    /**
+     * change uri to path string
+     * @param uri
+     * @return
+     */
+
+//    public String getPath(Uri uri)
+//    {
+//        String[] projection = {MediaStore.Images.Media.DATA };
+//        Cursor cursor = managedQuery(uri, projection, null, null, null);
+//        int column_index = cursor.getColumnIndexOrThrow(MediaStore.Images.Media.DATA);
+//        cursor.moveToFirst();
+//        return cursor.getString(column_index);
+//    }
+
+    /**
+     * use to lessen pic 50%
+     * @param path sd card path
+     * @return bitmap
+     */
+    public final static Bitmap lessenUriImage(String path)
+    {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inJustDecodeBounds = true;
+        Bitmap bitmap = BitmapFactory.decodeFile(path, options); //此时返回 bm 为空
+        options.inJustDecodeBounds = false; //缩放比。由于是固定比例缩放，只用高或者宽其中一个数据进行计算即可
+        int be = (int)(options.outHeight / (float)320);
+        if (be <= 0)
+            be = 1;
+        options.inSampleSize = be; //重新读入图片，注意此时已经把 options.inJustDecodeBounds 设回 false 了
+        bitmap=BitmapFactory.decodeFile(path,options);
+        int w = bitmap.getWidth();
+        int h = bitmap.getHeight();
+        System.out.println(w+" "+h); //after zoom
+        return bitmap;
+    }
+
+    /**
+     * 上传图片接口
+     *
+     * @param bitmap   需要上传的图片
+     * @param listener 请求回调
+     */
+    public static void uploadImg(String URI, Bitmap bitmap, ResponseListener listener) {
+        List<FormImage> imageList = new ArrayList<FormImage>();
+        imageList.add(new FormImage(bitmap));
+        Request request = new PostUploadRequest(URI, imageList, listener);
+        MyApplication.mQueue.add(request);
     }
 
     public String getSDPath() {

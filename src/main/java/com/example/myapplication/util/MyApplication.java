@@ -10,15 +10,16 @@ import com.android.volley.toolbox.Volley;
  */
 public class MyApplication extends Application {
 
-    public static RequestQueue queue;
+    public static RequestQueue mQueue;
+    public static String account = "111";
 
     @Override
     public void onCreate() {
         super.onCreate();
-        queue = Volley.newRequestQueue(getApplicationContext());
+        mQueue = Volley.newRequestQueue(getApplicationContext());
     }
 
-    public static RequestQueue getHttpQueue(){
-        return queue;
+    public static RequestQueue getHttpQueue() {
+        return mQueue;
     }
 }

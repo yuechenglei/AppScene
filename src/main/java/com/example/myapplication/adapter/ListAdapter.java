@@ -19,6 +19,11 @@ import java.util.List;
 public class ListAdapter extends BaseAdapter {
 
     List<ListBean> list;
+
+    public void setList(List<ListBean> list) {
+        this.list = list;
+    }
+
     LayoutInflater inflater;
     Activity context;
 
@@ -30,7 +35,10 @@ public class ListAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return list.size();
+        if (list != null)
+            return list.size();
+        else
+            return 0;
     }
 
     @Override
@@ -63,6 +71,7 @@ public class ListAdapter extends BaseAdapter {
         viewHolder.choose.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                //打开图库
                 UpLoadPhoto upLoadPhoto = new UpLoadPhoto(context);
                 upLoadPhoto.chooseAlbum();
             }
